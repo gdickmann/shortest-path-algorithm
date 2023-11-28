@@ -1,4 +1,6 @@
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Graph {
@@ -11,6 +13,10 @@ public class Graph {
 
     public Set<Node> getNodes() {
         return nodes;
+    }
+
+    public List<Node> getNodesAsArrayList() {
+        return new ArrayList<Node>(nodes);
     }
 
     public void setNodes(Set<Node> nodes) {

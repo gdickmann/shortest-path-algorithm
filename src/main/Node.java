@@ -9,6 +9,12 @@ public class Node {
         this.name = name;
     }
 
+    public Node(String name, int distance, Map<Node, Integer> adjacentNodes) {
+        this.name = name;
+        this.distance = distance;
+        this.adjacentNodes = adjacentNodes;
+    }
+
     private String name;
     private List<Node> shortestPath = new LinkedList<>();
     private int distance = Integer.MAX_VALUE;
