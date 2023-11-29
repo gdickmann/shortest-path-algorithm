@@ -15,7 +15,7 @@ public class Graph {
         return nodes;
     }
 
-    public List<Node> getNodesAsArrayList() {
+    public List<Node> getSourceAsArrayList() {
         return new ArrayList<Node>(nodes);
     }
 

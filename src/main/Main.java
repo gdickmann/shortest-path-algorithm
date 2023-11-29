@@ -4,13 +4,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.Stack;
 import java.util.Map.Entry;
 
 public class Main {
 
-    private static final int STARTING_NODE = 0;
+    private static final int SOURCE_NODE = 0;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -24,38 +26,59 @@ public class Main {
             List<String> nodes = scan("C:\\Users\\Biscoitinho\\Documents\\paths.txt");
             Graph graph = ToGraph(nodes);
             
-            Graph shortestPathsBetweenNodes = calculateShortestPath(graph, graph.getNodesAsArrayList().get(STARTING_NODE));
-            List<Node> shortestPath = shortestBetween(startAndEnd, shortestPathsBetweenNodes);
-            
-            System.out.println("A menor distância entre o ponto " + startAndEnd.charAt(0) + " e " + startAndEnd.charAt(2) + " é:");
+            // 1) Calcular a distância entre dois pontos fornecidos pelo usuário (pedir quais pontos), utilizando o algoritmo Dijkstra. 
+            Graph shortestPathsBetweenNodes = calculateShortestPath(graph, graph.getSourceAsArrayList().get(SOURCE_NODE));
 
-            for (Node i : shortestPath) {
-                System.out.println(i.getName());
-            }
+            System.out.println("\nMostrando valores em forma de pilha");
+            printNodesAsStack(shortestPathsBetweenNodes, startAndEnd);
+
+            System.out.println("\nMostrando valores em forma de fila");
+            printNodesAsQueue(shortestPathsBetweenNodes, startAndEnd);
         } catch (Exception e) {
             throw e;
         }
     }
     
-    private static List<Node> shortestBetween(String startAndEnd, Graph shortestPathsBetweenNodes) {
-        char start = startAndEnd.charAt(0);
-        char end = startAndEnd.charAt(2);
+    private static void printNodesAsQueue(Graph graph, String startAndEnd) {
+        Queue<Node> queue = new LinkedList<Node>();
 
-        for (Node i : shortestPathsBetweenNodes.getNodes()) {
-            if (i.getName().equals(start)) {
+        for (Node node : graph.getNodes()) {
+            queue.add(node);
+        }
 
+        for (Node node: queue) {
+            for (Entry<Node, Integer> neighbors: node.getNeighbors().entrySet()) {
+                if (neighbors.getKey().getShortestDistanceFound() != Integer.MAX_VALUE) {
+                    System.out.println("O menor caminho encontrado do nó " + node.getName() + " para o nó " 
+                    + neighbors.getKey().getName() + " foi de " + neighbors.getKey().getShortestDistanceFound());
+                }
             }
         }
-        return null;
     }
 
+    private static void printNodesAsStack(Graph graph, String startAndEnd) {
+        Stack<Node> stack = new Stack<Node>();
+
+        for (Node node : graph.getNodes()) {
+            stack.push(node);
+        }
+
+        for (Node node: stack) {
+            for (Entry<Node, Integer> neighbors: node.getNeighbors().entrySet()) {
+                if (neighbors.getKey().getShortestDistanceFound() != Integer.MAX_VALUE) {
+                    System.out.println("O menor caminho encontrado do nó " + node.getName() + " para o nó " 
+                    + neighbors.getKey().getName() + " foi de " + neighbors.getKey().getShortestDistanceFound());
+                }
+            }
+        }
+    }
     /**
      * @param graph O {@link Graph} a ser calculado.
      * @param source O nó de origem.
-     * @return {@link Graph} contendo o menor caminho de todo nó para todos os nós possíveis.
+     * @return {@link Graph} contendo o menor caminho de todos os nós com base no nó de origem.
      */
     private static Graph calculateShortestPath(Graph graph, Node source) {
-        source.setDistance(0);
+        source.setShortestDistanceFound(0);
 
         Set<Node> settledNodes = new HashSet<>();
         Set<Node> unsettledNodes = new HashSet<>();
@@ -67,14 +90,14 @@ public class Main {
             Node node = traverseToLowestDistanceNode(unsettledNodes);
             unsettledNodes.remove(node);
             
-            for (Entry<Node, Integer> adjacentNodes: node.getAdjacentNodes().entrySet()) {
+            for (Entry<Node, Integer> neighbors: node.getNeighbors().entrySet()) {
                 
-                Node adjacentNode = adjacentNodes.getKey();
-                Integer weight = adjacentNodes.getValue();
+                Node neighbor = neighbors.getKey();
+                Integer weight = neighbors.getValue();
                 
-                if (!settledNodes.contains(adjacentNode)) {
-                    calculateMinimumDistance(adjacentNode, weight, node);
-                    unsettledNodes.add(adjacentNode);
+                if (!settledNodes.contains(neighbor)) {
+                    calculateShortestDistanceFound(neighbor, weight, node);
+                    unsettledNodes.add(neighbor);
                 }
             }
             
@@ -89,10 +112,8 @@ public class Main {
         int lowestDistance = Integer.MAX_VALUE;
         
         for (Node node: unsettledNodes) {
-            int nodeDistance = node.getDistance();
-
-            if (nodeDistance < lowestDistance) {
-                lowestDistance = nodeDistance;
+            if (node.getShortestDistanceFound() < lowestDistance) {
+                lowestDistance = node.getShortestDistanceFound();
                 lowestDistanceNode = node;
             }
         }
@@ -100,16 +121,16 @@ public class Main {
         return lowestDistanceNode;
     }
     
-    private static void calculateMinimumDistance(Node adjacentNode, Integer weight, Node node) {
-        Integer distance = node.getDistance();
+    private static void calculateShortestDistanceFound(Node neighbor, Integer weight, Node node) {
+        Integer distance = node.getShortestDistanceFound();
         
-        if (distance + weight < adjacentNode.getDistance()) {
-            adjacentNode.setDistance(distance + weight);
+        if (distance + weight < neighbor.getShortestDistanceFound()) {
+            neighbor.setShortestDistanceFound(distance + weight);
 
             LinkedList<Node> shortestPath = new LinkedList<>(node.getShortestPath());
             shortestPath.add(node);
 
-            adjacentNode.setShortestPath(shortestPath);
+            neighbor.setShortestPath(shortestPath);
         }
     }
 
@@ -119,19 +140,27 @@ public class Main {
         for (String x: nodes) {
             String[] values = x.split(";");
             
-            String node = values[0];
+            String name = values[0];
             String destination = values[1];
             int distance = Integer.parseInt(values[2]);
+
+            Node node = getNodeByName(name, graph);
+            node.addDestination(new Node(destination), distance);
             
-            Node n = new Node(node);
-            n.addDestination(new Node(destination), distance);
-            
-            graph.addNode(n);
+            graph.addNode(node);
         }
 
         return graph;
     }
     
+    private static Node getNodeByName(String name, Graph graph) {
+        for (Node node : graph.getNodes()) {
+            if (node.getName().equals(name)) return node;
+        }
+
+        return new Node(name);
+    }
+
     private static List<String> scan(String path) throws IOException {
         File file = new File(path);
         Scanner input = new Scanner(file);
