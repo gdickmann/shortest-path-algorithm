@@ -24,7 +24,7 @@ public class Main {
             List<String> nodes = scan("C:\\Users\\gustavo.dickmann\\Documents\\first_query.txt");
             Graph graph = ToGraph(nodes);
 
-            Node source = getNodeByName(String.valueOf(startAndEnd.charAt(0)), graph);
+            Node source = getNodeByName(getStartingNode(startAndEnd), graph);
 
             Graph shortestPathsBetweenNodes = calculateShortestPath(graph, source);
 
@@ -41,9 +41,14 @@ public class Main {
         }
     }
 
+    private static String getStartingNode(String startAndEnd) {
+        return startAndEnd.split(" ")[0];
+    }
+
     private static void printStartAndEndNodes(Graph shortestPathsBetweenNodes, String startAndEnd) {
-        String start = String.valueOf(startAndEnd.charAt(0));
-        String end = String.valueOf(startAndEnd.charAt(2));
+
+        String start = getStartingNode(startAndEnd);
+        String end = getDestinationNode(startAndEnd);
 
         Node startNode = getNodeByName(start, shortestPathsBetweenNodes);
 
@@ -54,6 +59,10 @@ public class Main {
                         + neighbors.getKey().getShortestDistanceFound());
             }
         }
+    }
+
+    private static String getDestinationNode(String startAndEnd) {
+        return startAndEnd.split(" ")[1];
     }
 
     private static void printNodesAsQueue(Graph graph, String startAndEnd) {
@@ -77,11 +86,13 @@ public class Main {
     private static void printNodesAsStack(Graph graph, String startAndEnd) {
         Stack<Node> stack = new Stack<Node>();
 
-        while (!stack.empty()) {
-            System.out.println(stack.pop().getName());
+        for (Node node : graph.getNodes()) {
+            stack.push(node);
         }
 
-        for (Node node : stack) {
+        while (!stack.empty()) {
+            Node node = stack.pop();
+
             for (Entry<Node, Integer> neighbors : node.getNeighbors().entrySet()) {
                 if (neighbors.getKey().getShortestDistanceFound() != Integer.MAX_VALUE) {
                     System.out.println("O menor caminho encontrado do nó " + node.getName() + " para o nó "
